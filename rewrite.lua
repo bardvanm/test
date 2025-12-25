@@ -116,7 +116,10 @@ function WallV3:CreateWindow(title)
             tabBar.Visible = true
             content.Visible = true
             local maxContent = 0
-            for _,f in ipairs(self._folders) do maxContent = math.max(maxContent, f.ElementsFrame.AbsoluteSize.Y) end
+            for _,f in ipairs(self._folders) do
+                local h = (f._uiList and f._uiList.AbsoluteContentSize.Y) or f.ElementsFrame.AbsoluteSize.Y
+                maxContent = math.max(maxContent, h)
+            end
             local desired = math.clamp(HEADER_H + TAB_H + maxContent + 16, HEADER_H + TAB_H + 80, MAX_H)
             win:TweenSize(UDim2.new(0, WIDTH, 0, desired), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
         end
@@ -130,7 +133,8 @@ function WallV3:CreateWindow(title)
             f.Tab.Button.BackgroundColor3 = (f == folder) and theme.Accent or theme.Tab
         end
         if self._minimized then setMinimized(false) end
-        local contentH = math.min(MAX_H - (HEADER_H + TAB_H), folder.ElementsFrame.UIListLayout.AbsoluteContentSize.Y)
+        local listY = (folder._uiList and folder._uiList.AbsoluteContentSize.Y) or folder.ElementsFrame.AbsoluteSize.Y
+        local contentH = math.min(MAX_H - (HEADER_H + TAB_H), listY)
         local desired = HEADER_H + TAB_H + math.max(60, contentH) + 16
         win:TweenSize(UDim2.new(0, WIDTH, 0, desired), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
     end
@@ -147,7 +151,8 @@ function WallV3:CreateWindow(title)
         local elems = new("Frame", { Parent = content, Size = UDim2.new(1,0,0,0), BackgroundTransparency = 1, Visible = false, LayoutOrder = idx })
         local uiList = new("UIListLayout", { Parent = elems, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,6) })
         new("UIPadding", { Parent = elems, PaddingLeft = UDim.new(0,6), PaddingTop = UDim.new(0,6), PaddingBottom = UDim.new(0,6) })
-        elems.UIListLayout = uiList
+        -- can't attach arbitrary fields to Instances; keep layout ref on the Lua folder table
+        folder._uiList = uiList
         uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() elems.Size = UDim2.new(1,0,0, uiList.AbsoluteContentSize.Y) end)
 
         local function AddToggle(label, callback, default)
