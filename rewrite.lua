@@ -1,4 +1,4 @@
--- ===== Load self-contained WallV3 clone =====
+-- ===== Load self-contained WallV3 clonezzzzzzzzzzz =====
 local WallV3 = loadstring([[
 
 -- ===== Wall V3 FULL GUI Replacement =====
@@ -30,29 +30,96 @@ function WallV3:CreateWindow(title)
     local win = {}
     win.Folders = {}
 
-    -- Main ScreenGui
-    win.Gui = Create("ScreenGui",{Name=title,ResetOnSpawn=false,IgnoreGuiInset=true}, game:GetService("CoreGui"))
+    -- Main ScreenGui (use PlayerGui so it shows for this player)
+    win.Gui = Create("ScreenGui",{Name=title,ResetOnSpawn=false,IgnoreGuiInset=true}, game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"))
 
-    -- Main window frame
+    -- Constants
+    local HEADER_H = 36
+    local WIDTH = 420
+    local MAX_CONTENT_H = 260
+
+    -- Main window frame (includes header + content)
     win.Frame = Create("Frame",{
         Name="Window",
-        Size=UDim2.new(0,400,0,30),
+        Size=UDim2.new(0,WIDTH,0,HEADER_H), -- start header-only to mimic minimize behavior
         Position=UDim2.new(0.3,0,0.3,0),
         BackgroundColor3=Theme.Window,
         Active=true,
-        Draggable=true
+        ClipsDescendants=true
     }, win.Gui)
     Create("UICorner",{CornerRadius=UDim.new(0,8)}, win.Frame)
 
-    -- Title
+    -- Header
+    win.Header = Create("Frame",{
+        Parent=win.Frame,
+        Size=UDim2.new(1,0,0,HEADER_H),
+        BackgroundTransparency=1
+    })
     win.TitleLabel = Create("TextLabel",{
         Size=UDim2.new(1,0,1,0),
         BackgroundTransparency=1,
         Text=title,
         TextColor3=Theme.Text,
         Font=Enum.Font.SourceSansBold,
-        TextSize=20
-    }, win.Frame)
+        TextSize=18,
+        TextXAlignment=Enum.TextXAlignment.Left,
+        TextYAlignment=Enum.TextYAlignment.Center,
+        Position=UDim2.new(0,12,0,0)
+    }, win.Header)
+
+    -- Minimize / Toggle button
+    win.ToggleBtn = Create("TextButton",{
+        Size=UDim2.new(0,36,0,24),
+        Position=UDim2.new(1,-44,0.5,-12),
+        BackgroundColor3=Theme.Button,
+        Text="—",
+        TextColor3=Theme.Text,
+        Font=Enum.Font.SourceSansBold,
+        TextSize=20,
+        AutoButtonColor=false,
+    }, win.Header)
+    Create("UICorner",{CornerRadius=UDim.new(0,6)}, win.ToggleBtn)
+
+    -- Content area (scrolling to contain folder buttons + their element containers)
+    win.Content = Create("ScrollingFrame",{
+        Parent=win.Frame,
+        Name="Content",
+        Position=UDim2.new(0,0,0,HEADER_H),
+        Size=UDim2.new(1,0,0,0), -- will be resized when expanded
+        BackgroundTransparency=1,
+        ScrollBarThickness=6,
+        AutomaticCanvasSize=Enum.AutomaticSize.Y,
+        BorderSizePixel=0
+    })
+    local contentLayout = Create("UIListLayout",{Parent=win.Content, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,6)})
+    Create("UIPadding",{Parent=win.Content, PaddingTop=UDim.new(0,8), PaddingLeft=UDim.new(0,8), PaddingRight=UDim.new(0,8)})
+
+    -- State
+    local expanded = false
+    local function setExpanded(exp)
+        expanded = exp and true or false
+        if expanded then
+            win.Content.Size = UDim2.new(1,0,0, math.min(MAX_CONTENT_H, win.Content.CanvasSize.Y.Offset))
+            win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H + win.Content.Size.Y.Offset)
+            win.ToggleBtn.Text = "—"
+        else
+            win.Content.Size = UDim2.new(1,0,0,0)
+            win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H)
+            win.ToggleBtn.Text = "+"
+        end
+    end
+
+    win.ToggleBtn.MouseButton1Click:Connect(function()
+        setExpanded(not expanded)
+    end)
+
+    -- when content grows, if expanded adjust sizes (keeps within max)
+    win.Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
+        if expanded then
+            win.Content.Size = UDim2.new(1,0,0, math.min(MAX_CONTENT_H, win.Content.CanvasSize.Y.Offset))
+            win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H + win.Content.Size.Y.Offset)
+        end
+    end)
 
     -- Folder creation
     function win:CreateFolder(name)
@@ -61,119 +128,117 @@ function WallV3:CreateWindow(title)
         folder.Elements = {}
         folder.Opened = false
 
-        -- Folder button
+        -- Folder button (top-level item in the scrolling content)
         folder.Button = Create("TextButton",{
-            Size=UDim2.new(1,0,0,25),
+            Size=UDim2.new(1,0,0,30),
             BackgroundColor3=Theme.Folder,
             Text=name,
             TextColor3=Theme.Text,
             Font=Enum.Font.SourceSansBold,
             TextSize=16,
-            Parent=win.Frame
+            LayoutOrder = #win.Folders * 2, -- keep ordering stable
+            Parent = win.Content
         })
         Create("UICorner",{CornerRadius=UDim.new(0,6)}, folder.Button)
 
-        -- Elements container
+        -- Elements container (will be sized to contents)
         folder.ElementsFrame = Create("Frame",{
             Size=UDim2.new(1,0,0,0),
             BackgroundTransparency=1,
-            Parent=win.Frame,
-            Position=UDim2.new(0,0,0,25) -- will adjust later
+            Parent=win.Content,
+            Visible=false,
+            LayoutOrder = #win.Folders * 2 + 1
         })
-        Create("UIListLayout",{Padding=UDim.new(0,2), FillDirection=Enum.FillDirection.Vertical, SortOrder=Enum.SortOrder.LayoutOrder}, folder.ElementsFrame)
+        local elemsLayout = Create("UIListLayout",{Parent=folder.ElementsFrame, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,4)})
+        Create("UIPadding",{Parent=folder.ElementsFrame, PaddingLeft=UDim.new(0,6), PaddingBottom=UDim.new(0,6), PaddingTop=UDim.new(0,6)})
 
-        -- Toggle folder open
+        -- auto-size elements frame when its children change
+        elemsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            folder.ElementsFrame.Size = UDim2.new(1,0,0, elemsLayout.AbsoluteContentSize.Y)
+            -- update content visible size as well (CanvasSize will update and trigger handler)
+            if expanded then
+                win.Content.Size = UDim2.new(1,0,0, math.min(MAX_CONTENT_H, win.Content.CanvasSize.Y.Offset))
+                win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H + win.Content.Size.Y.Offset)
+            end
+        end)
+
+        -- open/close folder
         folder.Button.MouseButton1Click:Connect(function()
             folder.Opened = not folder.Opened
             folder.ElementsFrame.Visible = folder.Opened
-            self:UpdateFolderPositions()
+            -- ensure content is expanded so user can see
+            if folder.Opened and not expanded then setExpanded(true) end
         end)
 
-        -- Add element function
+        -- helper to add elements
         local function AddElement(type, props)
             local elem
             if type=="Button" then
                 elem = Create("TextButton",{
-                    Size=UDim2.new(1,0,0,25),
+                    Size=UDim2.new(1,0,0,26),
                     BackgroundColor3=Theme.Button,
                     Text=props.Label,
                     TextColor3=Theme.Text,
                     Font=Enum.Font.SourceSansBold,
-                    TextSize=16,
+                    TextSize=15,
                     Parent=folder.ElementsFrame
                 })
                 Create("UICorner",{CornerRadius=UDim.new(0,6)}, elem)
                 elem.MouseButton1Click:Connect(props.Callback)
             elseif type=="Toggle" then
-                elem = Create("TextButton",{
-                    Size=UDim2.new(1,0,0,25),
-                    BackgroundColor3=Theme.ToggleOff,
-                    Text=props.Label,
-                    TextColor3=Theme.Text,
-                    Font=Enum.Font.SourceSansBold,
-                    TextSize=16,
-                    Parent=folder.ElementsFrame
-                })
-                Create("UICorner",{CornerRadius=UDim.new(0,6)}, elem)
-                elem.MouseButton1Click:Connect(function()
+                elem = Create("Frame",{Size=UDim2.new(1,0,0,26), BackgroundTransparency=1, Parent=folder.ElementsFrame})
+                local lbl = Create("TextLabel",{Parent=elem,Size=UDim2.new(0.7,0,1,0),BackgroundTransparency=1,Text=props.Label,TextColor3=Theme.Text,Font=Enum.Font.SourceSans,TextSize=15,TextXAlignment=Enum.TextXAlignment.Left,Position=UDim2.new(0,8,0,0)})
+                local btn = Create("TextButton",{Parent=elem, Size=UDim2.new(0,28,0,20), Position=UDim2.new(1,-36,0.5,-10), BackgroundColor3=Theme.ToggleOff, Text="", AutoButtonColor=false})
+                Create("UICorner",{CornerRadius=UDim.new(0,4)}, btn)
+                props.State = props.State or false
+                btn.MouseButton1Click:Connect(function()
                     props.State = not props.State
-                    elem.BackgroundColor3 = props.State and Theme.ToggleOn or Theme.ToggleOff
-                    props.Callback(props.State)
+                    btn.BackgroundColor3 = props.State and Theme.ToggleOn or Theme.ToggleOff
+                    if props.Callback then props.Callback(props.State) end
                 end)
             elseif type=="Box" then
                 elem = Create("TextBox",{
-                    Size=UDim2.new(1,0,0,25),
+                    Size=UDim2.new(1,0,0,26),
                     BackgroundColor3=Theme.Button,
-                    Text=props.Label,
+                    Text=props.Label or "",
                     TextColor3=Theme.Text,
-                    Font=Enum.Font.SourceSansBold,
-                    TextSize=16,
+                    Font=Enum.Font.SourceSans,
+                    TextSize=15,
                     Parent=folder.ElementsFrame
                 })
+                Create("UICorner",{CornerRadius=UDim.new(0,6)}, elem)
                 elem.FocusLost:Connect(function(enter)
-                    if enter then props.Callback(elem.Text) end
+                    if enter and props.Callback then props.Callback(elem.Text) end
                 end)
             else
-                -- For simplicity, just create a placeholder TextLabel
                 elem = Create("TextLabel",{
-                    Size=UDim2.new(1,0,0,25),
+                    Size=UDim2.new(1,0,0,26),
                     BackgroundColor3=Theme.Button,
-                    Text=props.Label or type,
+                    Text=props.Label or tostring(type),
                     TextColor3=Theme.Text,
-                    Font=Enum.Font.SourceSansBold,
-                    TextSize=16,
+                    Font=Enum.Font.SourceSans,
+                    TextSize=15,
                     Parent=folder.ElementsFrame
                 })
+                Create("UICorner",{CornerRadius=UDim.new(0,6)}, elem)
             end
             table.insert(folder.Elements, elem)
+            return elem
         end
 
+        -- simple API
         folder.ButtonElement = AddElement
-        folder.Button = function(label,cb) AddElement("Button",{Label=label,Callback=cb}) end
-        folder.Toggle = function(label,cb) AddElement("Toggle",{Label=label,Callback=cb,State=false}) end
-        folder.Box = function(label,typ,cb) AddElement("Box",{Label=label,BoxType=typ,Callback=cb}) end
+        folder.Button = function(lbl, cb) AddElement("Button",{Label=lbl, Callback=cb}) end
+        folder.Toggle = function(lbl, cb) AddElement("Toggle",{Label=lbl, Callback=cb, State=false}) end
+        folder.Box = function(lbl, typ, cb) AddElement("Box",{Label=lbl, BoxType=typ, Callback=cb}) end
 
         table.insert(win.Folders, folder)
         return folder
     end
 
-    function win:UpdateFolderPositions()
-        local offset = 30
-        for _,folder in pairs(win.Folders) do
-            folder.Button.Position = UDim2.new(0,0,0,offset)
-            offset = offset + 25
-            if folder.Opened then
-                folder.ElementsFrame.Position = UDim2.new(0,0,0,offset)
-                folder.ElementsFrame.Visible = true
-                offset = offset + #folder.Elements*27
-            else
-                folder.ElementsFrame.Visible = false
-            end
-        end
-    end
-
-    win.ToggleUI = function() print("Toggled UI") end
-    win.DestroyGui = function() win.Gui:Destroy() end
+    -- expose helpers
+    win.ToggleUI = function() setExpanded(not expanded) end
+    win.DestroyGui = function() if win and win.Gui then win.Gui:Destroy() end end
 
     return win
 end
