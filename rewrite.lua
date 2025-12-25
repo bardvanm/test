@@ -1,6 +1,8 @@
--- ez ez ez
+-- (removed accidental early return so module initializes correctly)
+-- Wally-style GUI (single file). Call with:
+-- local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/your/repo/main/rewrite.lua"))()
+-- local Window = library:CreateWindow("Title")
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
@@ -27,11 +29,11 @@ local function new(class, props)
     return inst
 end
 
-local function makeDraggable(frame, dragHandle)
-    dragHandle = dragHandle or frame
-    dragHandle.Active = true
+local function makeDraggable(frame, handle)
+    handle = handle or frame
+    handle.Active = true
     local dragging, dragInput, dragStart, startPos
-    dragHandle.InputBegan:Connect(function(input)
+    handle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = true
             dragStart = input.Position
@@ -41,7 +43,7 @@ local function makeDraggable(frame, dragHandle)
             end)
         end
     end)
-    dragHandle.InputChanged:Connect(function(input)
+    handle.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
     end)
     UserInputService.InputChanged:Connect(function(input)
@@ -64,7 +66,7 @@ function WallV3:CreateWindow(title)
     self._folders = {}
     self._minimized = false
 
-    local SCREEN = new("ScreenGui", { Name = "WallyV3_"..tostring(math.random(1000,9999)), ResetOnSpawn = false, IgnoreGuiInset = true, Parent = playerGui })
+    local SCREEN = new("ScreenGui", { Name = "bartlib_wally_install_"..tostring(math.random(1000,9999)), ResetOnSpawn = false, IgnoreGuiInset = true, Parent = playerGui })
 
     local WIDTH = 420
     local HEADER_H = 34
@@ -82,12 +84,11 @@ function WallV3:CreateWindow(title)
         Active = true,
     })
     new("UICorner", { Parent = win, CornerRadius = UDim.new(0,8) })
-    local outline = new("Frame", { Parent = win, Size = UDim2.new(1,2,1,2), Position = UDim2.new(0,-1,0,-1), BackgroundColor3 = theme.Outline, BorderSizePixel = 0, ZIndex = 0 })
-    new("UICorner", { Parent = outline, CornerRadius = UDim.new(0,8) })
+    new("Frame", { Parent = win, Size = UDim2.new(1,2,1,2), Position = UDim2.new(0,-1,0,-1), BackgroundColor3 = theme.Outline, BorderSizePixel = 0, ZIndex = 0 })
 
     local header = new("Frame", { Parent = win, Size = UDim2.new(1,0,0,HEADER_H), BackgroundColor3 = theme.Accent, BorderSizePixel = 0 })
     new("UICorner", { Parent = header, CornerRadius = UDim.new(0,8) })
-    local titleLbl = new("TextLabel", { Parent = header, Size = UDim2.new(1, -44, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1, Text = tostring(title or "Window"), TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left })
+    new("TextLabel", { Parent = header, Size = UDim2.new(1, -56, 1, 0), Position = UDim2.new(0, 12, 0, 0), BackgroundTransparency = 1, Text = tostring(title or "Window"), TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left })
     local miniBtn = new("TextButton", { Parent = header, Size = UDim2.new(0,36,0,22), Position = UDim2.new(1, -44, 0.5, -11), BackgroundColor3 = theme.Tab, Text = "—", TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 14, AutoButtonColor = false })
     new("UICorner", { Parent = miniBtn, CornerRadius = UDim.new(0,6) })
 
@@ -149,10 +150,9 @@ function WallV3:CreateWindow(title)
         elems.UIListLayout = uiList
         uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() elems.Size = UDim2.new(1,0,0, uiList.AbsoluteContentSize.Y) end)
 
-        -- Elements factory
         local function AddToggle(label, callback, default)
             local item = new("Frame", { Parent = elems, Size = UDim2.new(1,0,0,28), BackgroundTransparency = 1 })
-            local txt = new("TextLabel", { Parent = item, Size = UDim2.new(0.75, -8, 1, 0), Position = UDim2.new(0,8,0,0), BackgroundTransparency = 1, Text = label, TextColor3 = theme.Sub, Font = Enum.Font.SourceSans, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left })
+            new("TextLabel", { Parent = item, Size = UDim2.new(0.75, -8, 1, 0), Position = UDim2.new(0,8,0,0), BackgroundTransparency = 1, Text = label, TextColor3 = theme.Sub, Font = Enum.Font.SourceSans, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left })
             local box = new("Frame", { Parent = item, Size = UDim2.new(0,20,0,20), Position = UDim2.new(1, -28, 0.5, -10), BackgroundColor3 = Color3.fromRGB(50,50,50), BorderSizePixel = 0 })
             new("UICorner", { Parent = box, CornerRadius = UDim.new(0,4) })
             local tick = new("Frame", { Parent = box, Size = UDim2.new(1, -6, 1, -6), Position = UDim2.new(0,3,0,3), BackgroundColor3 = theme.Checked, Visible = default and true or false, BorderSizePixel = 0 })
@@ -180,7 +180,7 @@ function WallV3:CreateWindow(title)
             local max = opts and opts.max or 100
             local precise = opts and opts.precise
             local f = new("Frame", { Parent = elems, Size = UDim2.new(1,0,0,36), BackgroundTransparency = 1 })
-            local lbl = new("TextLabel", { Parent = f, Size = UDim2.new(0.55,0,0,18), Position = UDim2.new(0,8,0,4), BackgroundTransparency = 1, Text = label, TextColor3 = theme.Sub, Font = Enum.Font.SourceSans, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left })
+            new("TextLabel", { Parent = f, Size = UDim2.new(0.55,0,0,18), Position = UDim2.new(0,8,0,4), BackgroundTransparency = 1, Text = label, TextColor3 = theme.Sub, Font = Enum.Font.SourceSans, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left })
             local valLbl = new("TextLabel", { Parent = f, Size = UDim2.new(0.3,0,0,18), Position = UDim2.new(1,-120,0,4), BackgroundTransparency = 1, Text = tostring(min), TextColor3 = theme.Text, Font = Enum.Font.SourceSans, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right })
             local track = new("Frame", { Parent = f, Size = UDim2.new(1,-140,0,10), Position = UDim2.new(0,8,0,20), BackgroundColor3 = Color3.fromRGB(60,60,60) })
             new("UICorner", { Parent = track, CornerRadius = UDim.new(0,4) })
@@ -234,7 +234,7 @@ function WallV3:CreateWindow(title)
 
         local function AddBind(label, keyDefault, cb)
             local f = new("Frame", { Parent = elems, Size = UDim2.new(1,0,0,28), BackgroundTransparency = 1 })
-            local lbl = new("TextLabel", { Parent = f, Size = UDim2.new(0.65,0,1,0), BackgroundTransparency = 1, Text = label, TextColor3 = theme.Sub, Font = Enum.Font.SourceSans, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.new(0,8,0,0) })
+            new("TextLabel", { Parent = f, Size = UDim2.new(0.65,0,1,0), BackgroundTransparency = 1, Text = label, TextColor3 = theme.Sub, Font = Enum.Font.SourceSans, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Position = UDim2.new(0,8,0,0) })
             local kb = new("TextButton", { Parent = f, Size = UDim2.new(0,80,0,20), Position = UDim2.new(1,-88,0.5,-10), BackgroundColor3 = theme.Button, Text = (keyDefault and tostring(keyDefault):gsub("Enum.KeyCode.","") or "None"), AutoButtonColor = false })
             new("UICorner", { Parent = kb, CornerRadius = UDim.new(0,6) })
             kb.MouseButton1Click:Connect(function()
@@ -262,9 +262,9 @@ function WallV3:CreateWindow(title)
             return b
         end
 
+        -- public API supports colon and dot call styles
         folder.Tab = { Button = tabBtn }
         folder.ElementsFrame = elems
-        -- support both colon and dot styles: Folder:Toggle(...) or Folder.Toggle(...)
         folder.Toggle = function(_, ...) return AddToggle(...) end
         folder.Button = function(_, ...) return AddButton(...) end
         folder.Slider = function(_, ...) return AddSlider(...) end
@@ -285,44 +285,42 @@ function WallV3:CreateWindow(title)
     return setmetatable(self, { __index = WallV3 })
 end
 
--- ===== Example usage: Ultimate Script Hub =====
-local Window = WallV3:CreateWindow("Ultimate Script Hub")
+-- ===== Example usage: Ultimate Script Hub (runs when rewrite.lua is loadstring'd) =====
+do
+    local Library = setmetatable({}, { __call = function() return WallV3 end })()
+    local Window = Library:CreateWindow("Ultimate Script Hub")
 
--- Initialize top-level folders first
-local Farming = Window:CreateFolder("Farming")
-local Combat = Window:CreateFolder("Combat")
-local Misc = Window:CreateFolder("Misc")
-local Settings = Window:CreateFolder("Settings")
+    local Farming = Window:CreateFolder("Farming")
+    local Combat = Window:CreateFolder("Combat")
+    local Misc = Window:CreateFolder("Misc")
+    local Settings = Window:CreateFolder("Settings")
 
--- Populate Farming folder
-Farming:Toggle("Farming Section", function() end) -- dummy toggle
-Farming:Button("Auto Farm", function() print("Auto Farm clicked") end)
-Farming:Slider("Farm Speed",{min=10,max=100,precise=true},function(val) print("Farm Speed:",val) end)
-Farming:Dropdown("Select Item",{"Sword","Pickaxe","Potion"},true,function(opt) print("Selected:",opt) end)
-Farming:Bind("Farm Bind",Enum.KeyCode.F,function() print("Bind pressed") end)
-Farming:Box("Custom Value","number",function(val) print("Box:",val) end)
+    Farming:Toggle("Farming Section", function() end)
+    Farming:Button("Auto Farm", function() print("Auto Farm clicked") end)
+    Farming:Slider("Farm Speed",{min=10,max=100,precise=true},function(val) print("Farm Speed:",val) end)
+    Farming:Dropdown("Select Item",{"Sword","Pickaxe","Potion"},true,function(opt) print("Selected:",opt) end)
+    Farming:Bind("Farm Bind",Enum.KeyCode.F,function() print("Bind pressed") end)
+    Farming:Box("Custom Value","number",function(val) print("Box:",val) end)
 
--- Populate Combat folder
-Combat:Toggle("Combat Section", function() end) -- dummy toggle
-Combat:Toggle("Kill Aura",function(state) print("Kill Aura:",state) end)
-Combat:Slider("Aura Range",{min=5,max=50,precise=false},function(val) print("Aura Range:",val) end)
-Combat:Button("Enable One Hit",function() print("One Hit Enabled") end)
-Combat:Dropdown("Attack Mode",{"Normal","Fast","Insane"},true,function(opt) print("Attack Mode:",opt) end)
+    Combat:Toggle("Combat Section", function() end)
+    Combat:Toggle("Kill Aura",function(state) print("Kill Aura:",state) end)
+    Combat:Slider("Aura Range",{min=5,max=50,precise=false},function(val) print("Aura Range:",val) end)
+    Combat:Button("Enable One Hit",function() print("One Hit Enabled") end)
+    Combat:Dropdown("Attack Mode",{"Normal","Fast","Insane"},true,function(opt) print("Attack Mode:",opt) end)
 
--- Populate Misc folder
-Misc:Toggle("Misc Section", function() end) -- dummy toggle
-Misc:Button("Infinite Jump",function() print("Infinite Jump") end)
-Misc:Button("Anti AFK",function() print("Anti AFK Activated") end)
-Misc:Toggle("Noclip",function(state) print("Noclip:",state) end)
-Misc:Slider("Jump Power",{min=50,max=500,precise=true},function(val) print("Jump Power:",val) end)
-Misc:Box("Custom Name","string",function(val) print("Box Input:",val) end)
-Misc:Bind("Misc Bind",Enum.KeyCode.M,function() print("Misc Bind pressed") end)
+    Misc:Toggle("Misc Section", function() end)
+    Misc:Button("Infinite Jump",function() print("Infinite Jump") end)
+    Misc:Button("Anti AFK",function() print("Anti AFK Activated") end)
+    Misc:Toggle("Noclip",function(state) print("Noclip:",state) end)
+    Misc:Slider("Jump Power",{min=50,max=500,precise=true},function(val) print("Jump Power:",val) end)
+    Misc:Box("Custom Name","string",function(val) print("Box Input:",val) end)
+    Misc:Bind("Misc Bind",Enum.KeyCode.M,function() print("Misc Bind pressed") end)
 
--- Populate Settings folder
-Settings:Toggle("Settings Section", function() end) -- dummy toggle
-Settings:Bind("Toggle UI",Enum.KeyCode.RightShift,function() Window:ToggleUI() end)
-Settings:Button("Destroy UI",function() Window:DestroyGui() end)
+    Settings:Toggle("Settings Section", function() end)
+    Settings:Bind("Toggle UI",Enum.KeyCode.RightShift,function() Window:ToggleUI() end)
+    Settings:Button("Destroy UI",function() Window:DestroyGui() end)
+end
 
--- Return callable-like table for backwards compat
+-- expose callable-like table for backwards compat
 return setmetatable({}, { __call = function() return WallV3 end })
 
