@@ -94,6 +94,7 @@ function WallV3:CreateWindow(title)
         Size=UDim2.new(1,0,0,HEADER_H),
         BackgroundTransparency=1,
         ZIndex = 2,
+        Active = true, -- ensure header receives input for dragging
     })
     win.TitleLabel = Create("TextLabel",{
         Size=UDim2.new(1,0,1,0),
@@ -151,11 +152,25 @@ function WallV3:CreateWindow(title)
             win.Frame:TweenSize(UDim2.new(0,WIDTH,0, HEADER_H + contentH), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
             win.ToggleBtn.Text = "—"
         else
+            -- collapse + ensure all folder sub-frames (dropdown lists / pickers) are hidden
             win.Content:TweenSize(UDim2.new(1,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
             win.Frame:TweenSize(UDim2.new(0,WIDTH,0, HEADER_H), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
             win.ToggleBtn.Text = "+"
             delay(0.16, function()
-                if not expanded then win.Content.Visible = false end
+                if not expanded then
+                    win.Content.Visible = false
+                    -- close all folders and any nested frames (dropdown lists / pickers)
+                    for _,folder in ipairs(win.Folders) do
+                        folder.Opened = false
+                        folder.ElementsFrame.Visible = false
+                        for _,child in pairs(folder.ElementsFrame:GetDescendants()) do
+                            if child:IsA("Frame") and child ~= folder.ElementsFrame then
+                                -- hide possible nested lists/pickers
+                                pcall(function() child.Visible = false end)
+                            end
+                        end
+                    end
+                end
             end)
         end
     end
@@ -318,9 +333,16 @@ function WallV3:CreateWindow(title)
                 local btn = Create("TextButton",{Parent=elem, Size=UDim2.new(1,0,0,30), BackgroundColor3=Theme.Button, Text=props.Label or "Select", TextColor3=Theme.Text, AutoButtonColor=false})
                 btn.TextXAlignment = Enum.TextXAlignment.Left
                 Create("UICorner",{Parent=btn, CornerRadius=UDim.new(0,6)})
+                Create("UIPadding",{Parent=btn, PaddingLeft=UDim.new(0,8)})
                 local list = Create("Frame",{Parent=folder.ElementsFrame, Size=UDim2.new(1,0,0,0), BackgroundTransparency=1, Visible=false})
-                local listLayout = Create("UIListLayout",{Parent=list, SortOrder=Enum.SortOrder.LayoutOrder})
+                local listLayout = Create("UIListLayout",{Parent=list, SortOrder=Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,4)})
                 Create("UIPadding",{Parent=list, PaddingLeft=UDim.new(0,8), PaddingTop=UDim.new(0,4), PaddingBottom=UDim.new(0,4)})
+                -- auto-size the dropdown list when options change
+                local function updateListSize()
+                    list.Size = UDim2.new(1,0,0, listLayout.AbsoluteContentSize.Y)
+                end
+                listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateListSize)
+
                 btn.MouseButton1Click:Connect(function()
                     list.Visible = not list.Visible
                     if list.Visible and not expanded then setExpanded(true) end
@@ -329,12 +351,14 @@ function WallV3:CreateWindow(title)
                     local oBtn = Create("TextButton",{Parent=list, Size=UDim2.new(1,0,0,26), BackgroundColor3=Theme.Button, Text=opt, TextColor3=Theme.Text, AutoButtonColor=false})
                     oBtn.TextXAlignment = Enum.TextXAlignment.Left
                     Create("UICorner",{Parent=oBtn, CornerRadius=UDim.new(0,6)})
+                    Create("UIPadding",{Parent=oBtn, PaddingLeft=UDim.new(0,8)})
                     oBtn.MouseButton1Click:Connect(function()
                         btn.Text = tostring(opt)
                         list.Visible = false
                         if props.Callback then pcall(props.Callback, opt) end
                     end)
                 end
+                updateListSize()
             elseif type == "Bind" then
                 elem = Create("Frame",{Size=UDim2.new(1,0,0,26), BackgroundTransparency=1, Parent=folder.ElementsFrame})
                 local lbl = Create("TextLabel",{Parent=elem,Size=UDim2.new(0.65,0,1,0),BackgroundTransparency=1,Text=props.Label or "Bind",TextColor3=Theme.Text,Font=Enum.Font.SourceSans,TextSize=15,TextXAlignment=Enum.TextXAlignment.Left,Position=UDim2.new(0,8,0,0)})
