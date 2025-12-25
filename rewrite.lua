@@ -92,9 +92,9 @@ function WallV3:CreateWindow(title)
     local miniBtn = new("TextButton", { Parent = header, Size = UDim2.new(0,36,0,22), Position = UDim2.new(1, -44, 0.5, -11), BackgroundColor3 = theme.Tab, Text = "—", TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 14, AutoButtonColor = false })
     new("UICorner", { Parent = miniBtn, CornerRadius = UDim.new(0,6) })
 
-    local tabBar = new("Frame", { Parent = win, Position = UDim2.new(0,0,0,HEADER_H), Size = UDim2.new(1,0,0,TAB_H), BackgroundColor3 = theme.Tab, BorderSizePixel = 0 })
+    local tabBar = new("Frame", { Parent = win, Name = "TabBar", Position = UDim2.new(0,0,0,HEADER_H), Size = UDim2.new(1,0,0,TAB_H), BackgroundColor3 = theme.Tab, BorderSizePixel = 0, ClipsDescendants = false })
     new("UICorner", { Parent = tabBar, CornerRadius = UDim.new(0,6) })
-    local tabLayout = new("UIListLayout", { Parent = tabBar, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0,8) })
+    local tabLayout = new("UIListLayout", { Parent = tabBar, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0,8), SortOrder = Enum.SortOrder.LayoutOrder })
     new("UIPadding", { Parent = tabBar, PaddingLeft = UDim.new(0,8), PaddingRight = UDim.new(0,8) })
 
     local content = new("Frame", { Parent = win, Position = UDim2.new(0,0,0, HEADER_H + TAB_H), Size = UDim2.new(1,0,0,0), BackgroundColor3 = theme.Panel, BorderSizePixel = 0 })
@@ -139,9 +139,9 @@ function WallV3:CreateWindow(title)
         local folder = { Name = name, Elements = {}, Opened = false }
         local idx = #self._folders + 1
 
-        local tabBtn = new("TextButton", { Parent = tabBar, BackgroundColor3 = theme.Tab, AutoButtonColor = false, Text = name, TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 13, Size = UDim2.new(0, 100, 0, 28), LayoutOrder = idx })
+        local tabBtn = new("TextButton", { Parent = tabBar, Name = "Tab_"..idx, BackgroundColor3 = theme.Tab, AutoButtonColor = false, Text = name or ("Tab"..idx), TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 13, Size = UDim2.new(0,0,0,28), AutomaticSize = Enum.AutomaticSize.X, LayoutOrder = idx })
         new("UICorner", { Parent = tabBtn, CornerRadius = UDim.new(0,6) })
-        new("UIPadding", { Parent = tabBtn, PaddingLeft = UDim.new(0,8) })
+        new("UIPadding", { Parent = tabBtn, PaddingLeft = UDim.new(0,12), PaddingRight = UDim.new(0,12) })
         tabBtn.MouseButton1Click:Connect(function() selectFolder(folder) end)
 
         local elems = new("Frame", { Parent = content, Size = UDim2.new(1,0,0,0), BackgroundTransparency = 1, Visible = false, LayoutOrder = idx })
