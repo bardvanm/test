@@ -72,7 +72,7 @@ function WallV3:CreateWindow(title)
         Size=UDim2.new(0,36,0,24),
         Position=UDim2.new(1,-44,0.5,-12),
         BackgroundColor3=Theme.Button,
-        Text="—",
+        Text="+", -- start collapsed
         TextColor3=Theme.Text,
         Font=Enum.Font.SourceSansBold,
         TextSize=20,
@@ -96,16 +96,23 @@ function WallV3:CreateWindow(title)
 
     -- State
     local expanded = false
+
     local function setExpanded(exp)
-        expanded = exp and true or false
+        expanded = not not exp
         if expanded then
-            win.Content.Size = UDim2.new(1,0,0, math.min(MAX_CONTENT_H, win.Content.CanvasSize.Y.Offset))
-            win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H + win.Content.Size.Y.Offset)
+            win.Content.Visible = true
+            local contentH = math.min(MAX_CONTENT_H, math.max(60, contentLayout.AbsoluteContentSize.Y))
+            win.Content:TweenSize(UDim2.new(1,0,0, contentH), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+            win.Frame:TweenSize(UDim2.new(0,WIDTH,0, HEADER_H + contentH), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
             win.ToggleBtn.Text = "—"
         else
-            win.Content.Size = UDim2.new(1,0,0,0)
-            win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H)
+            win.Content:TweenSize(UDim2.new(1,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+            win.Frame:TweenSize(UDim2.new(0,WIDTH,0, HEADER_H), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
             win.ToggleBtn.Text = "+"
+            -- hide after tween to prevent interaction / accidental visibility flicker
+            delay(0.16, function()
+                if not expanded then win.Content.Visible = false end
+            end)
         end
     end
 
@@ -116,8 +123,7 @@ function WallV3:CreateWindow(title)
     -- when content grows, if expanded adjust sizes (keeps within max)
     win.Content:GetPropertyChangedSignal("CanvasSize"):Connect(function()
         if expanded then
-            win.Content.Size = UDim2.new(1,0,0, math.min(MAX_CONTENT_H, win.Content.CanvasSize.Y.Offset))
-            win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H + win.Content.Size.Y.Offset)
+            setExpanded(true) -- recompute based on layout size (uses contentLayout.AbsoluteContentSize)
         end
     end)
 
@@ -155,10 +161,9 @@ function WallV3:CreateWindow(title)
         -- auto-size elements frame when its children change
         elemsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             folder.ElementsFrame.Size = UDim2.new(1,0,0, elemsLayout.AbsoluteContentSize.Y)
-            -- update content visible size as well (CanvasSize will update and trigger handler)
+            -- update content visible size as well
             if expanded then
-                win.Content.Size = UDim2.new(1,0,0, math.min(MAX_CONTENT_H, win.Content.CanvasSize.Y.Offset))
-                win.Frame.Size = UDim2.new(0,WIDTH,0, HEADER_H + win.Content.Size.Y.Offset)
+                setExpanded(true)
             end
         end)
 
@@ -239,6 +244,9 @@ function WallV3:CreateWindow(title)
     -- expose helpers
     win.ToggleUI = function() setExpanded(not expanded) end
     win.DestroyGui = function() if win and win.Gui then win.Gui:Destroy() end end
+
+    -- initial state (ensure UI consistent)
+    setExpanded(false)
 
     return win
 end
