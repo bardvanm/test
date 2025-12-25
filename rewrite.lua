@@ -1,4 +1,4 @@
--- Single-file Wally-style GUI (CreateWindow, CreateFolder + elements) + example usage
+-- ez ez ez
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -93,7 +93,7 @@ function WallV3:CreateWindow(title)
 
     local tabBar = new("Frame", { Parent = win, Position = UDim2.new(0,0,0,HEADER_H), Size = UDim2.new(1,0,0,TAB_H), BackgroundColor3 = theme.Tab, BorderSizePixel = 0 })
     new("UICorner", { Parent = tabBar, CornerRadius = UDim.new(0,6) })
-    local tabLayout = new("UIListLayout", { Parent = tabBar, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0,8) })
+    local tabLayout = new("UIListLayout", { Parent = tabBar, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0,8) })
     new("UIPadding", { Parent = tabBar, PaddingLeft = UDim.new(0,8), PaddingRight = UDim.new(0,8) })
 
     local content = new("Frame", { Parent = win, Position = UDim2.new(0,0,0, HEADER_H + TAB_H), Size = UDim2.new(1,0,0,0), BackgroundColor3 = theme.Panel, BorderSizePixel = 0 })
@@ -138,7 +138,7 @@ function WallV3:CreateWindow(title)
         local folder = { Name = name, Elements = {}, Opened = false }
         local idx = #self._folders + 1
 
-        local tabBtn = new("TextButton", { Parent = tabBar, BackgroundColor3 = theme.Tab, AutoButtonColor = false, Text = name, TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 13, Size = UDim2.new(0, 120, 0, 28), LayoutOrder = idx })
+        local tabBtn = new("TextButton", { Parent = tabBar, BackgroundColor3 = theme.Tab, AutoButtonColor = false, Text = name, TextColor3 = theme.Text, Font = Enum.Font.GothamBold, TextSize = 13, Size = UDim2.new(0, 100, 0, 28), LayoutOrder = idx })
         new("UICorner", { Parent = tabBtn, CornerRadius = UDim.new(0,6) })
         new("UIPadding", { Parent = tabBtn, PaddingLeft = UDim.new(0,8) })
         tabBtn.MouseButton1Click:Connect(function() selectFolder(folder) end)
@@ -264,12 +264,13 @@ function WallV3:CreateWindow(title)
 
         folder.Tab = { Button = tabBtn }
         folder.ElementsFrame = elems
-        folder.Toggle = AddToggle
-        folder.Button = AddButton
-        folder.Slider = AddSlider
-        folder.Dropdown = AddDropdown
-        folder.Bind = AddBind
-        folder.Box = AddBox
+        -- support both colon and dot styles: Folder:Toggle(...) or Folder.Toggle(...)
+        folder.Toggle = function(_, ...) return AddToggle(...) end
+        folder.Button = function(_, ...) return AddButton(...) end
+        folder.Slider = function(_, ...) return AddSlider(...) end
+        folder.Dropdown = function(_, ...) return AddDropdown(...) end
+        folder.Bind = function(_, ...) return AddBind(...) end
+        folder.Box = function(_, ...) return AddBox(...) end
         folder.Open = function() selectFolder(folder) end
         folder.Close = function() elems.Visible = false end
 
