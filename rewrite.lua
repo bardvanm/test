@@ -1,7 +1,8 @@
--- (removed accidental early return so module initializes correctly)
--- Wally-style GUI (single file). Call with:
--- local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/your/repo/main/rewrite.lua"))()
--- local Window = library:CreateWindow("Title")
+-- BartLib: Wally-style GUI library (loadstring(...)() returns this)
+-- Usage:
+-- local bartlib = loadstring(game:HttpGet('<raw rewrite.lua url>'))()
+-- local Window = bartlib:CreateWindow("My Hub")
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
@@ -58,15 +59,15 @@ local function makeDraggable(frame, handle)
     end)
 end
 
-local WallV3 = {}
-WallV3.__index = WallV3
+local BartLib = {}
+BartLib.__index = BartLib
 
-function WallV3:CreateWindow(title)
+function BartLib:CreateWindow(title)
     local self = {}
     self._folders = {}
     self._minimized = false
 
-    local SCREEN = new("ScreenGui", { Name = "bartlib_wally_install_"..tostring(math.random(1000,9999)), ResetOnSpawn = false, IgnoreGuiInset = true, Parent = playerGui })
+    local SCREEN = new("ScreenGui", { Name = "bartlib_install_"..tostring(math.random(1000,9999)), ResetOnSpawn = false, IgnoreGuiInset = true, Parent = playerGui })
 
     local WIDTH = 420
     local HEADER_H = 34
@@ -98,7 +99,7 @@ function WallV3:CreateWindow(title)
     new("UIPadding", { Parent = tabBar, PaddingLeft = UDim.new(0,8), PaddingRight = UDim.new(0,8) })
 
     local content = new("Frame", { Parent = win, Position = UDim2.new(0,0,0, HEADER_H + TAB_H), Size = UDim2.new(1,0,0,0), BackgroundColor3 = theme.Panel, BorderSizePixel = 0 })
-    local contentLayout = new("UIListLayout", { Parent = content, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,6) })
+    new("UIListLayout", { Parent = content, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,6) })
     new("UIPadding", { Parent = content, PaddingLeft = UDim.new(0,8), PaddingTop = UDim.new(0,8), PaddingRight = UDim.new(0,8) })
 
     makeDraggable(win, header)
@@ -151,7 +152,6 @@ function WallV3:CreateWindow(title)
         local elems = new("Frame", { Parent = content, Size = UDim2.new(1,0,0,0), BackgroundTransparency = 1, Visible = false, LayoutOrder = idx })
         local uiList = new("UIListLayout", { Parent = elems, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,6) })
         new("UIPadding", { Parent = elems, PaddingLeft = UDim.new(0,6), PaddingTop = UDim.new(0,6), PaddingBottom = UDim.new(0,6) })
-        -- can't attach arbitrary fields to Instances; keep layout ref on the Lua folder table
         folder._uiList = uiList
         uiList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() elems.Size = UDim2.new(1,0,0, uiList.AbsoluteContentSize.Y) end)
 
@@ -287,44 +287,8 @@ function WallV3:CreateWindow(title)
     function self:ToggleUI() setMinimized(not self._minimized) end
     function self:DestroyGui() if SCREEN then SCREEN:Destroy() end end
 
-    return setmetatable(self, { __index = WallV3 })
+    return setmetatable(self, { __index = BartLib })
 end
 
--- ===== Example usage: Ultimate Script Hub (runs when rewrite.lua is loadstring'd) =====
-do
-    local Library = setmetatable({}, { __call = function() return WallV3 end })()
-    local Window = Library:CreateWindow("Ultimate Script Hub")
-
-    local Farming = Window:CreateFolder("Farming")
-    local Combat = Window:CreateFolder("Combat")
-    local Misc = Window:CreateFolder("Misc")
-    local Settings = Window:CreateFolder("Settings")
-
-    Farming:Toggle("Farming Section", function() end)
-    Farming:Button("Auto Farm", function() print("Auto Farm clicked") end)
-    Farming:Slider("Farm Speed",{min=10,max=100,precise=true},function(val) print("Farm Speed:",val) end)
-    Farming:Dropdown("Select Item",{"Sword","Pickaxe","Potion"},true,function(opt) print("Selected:",opt) end)
-    Farming:Bind("Farm Bind",Enum.KeyCode.F,function() print("Bind pressed") end)
-    Farming:Box("Custom Value","number",function(val) print("Box:",val) end)
-
-    Combat:Toggle("Combat Section", function() end)
-    Combat:Toggle("Kill Aura",function(state) print("Kill Aura:",state) end)
-    Combat:Slider("Aura Range",{min=5,max=50,precise=false},function(val) print("Aura Range:",val) end)
-    Combat:Button("Enable One Hit",function() print("One Hit Enabled") end)
-    Combat:Dropdown("Attack Mode",{"Normal","Fast","Insane"},true,function(opt) print("Attack Mode:",opt) end)
-
-    Misc:Toggle("Misc Section", function() end)
-    Misc:Button("Infinite Jump",function() print("Infinite Jump") end)
-    Misc:Button("Anti AFK",function() print("Anti AFK Activated") end)
-    Misc:Toggle("Noclip",function(state) print("Noclip:",state) end)
-    Misc:Slider("Jump Power",{min=50,max=500,precise=true},function(val) print("Jump Power:",val) end)
-    Misc:Box("Custom Name","string",function(val) print("Box Input:",val) end)
-    Misc:Bind("Misc Bind",Enum.KeyCode.M,function() print("Misc Bind pressed") end)
-
-    Settings:Toggle("Settings Section", function() end)
-    Settings:Bind("Toggle UI",Enum.KeyCode.RightShift,function() Window:ToggleUI() end)
-    Settings:Button("Destroy UI",function() Window:DestroyGui() end)
-end
-
--- expose callable-like table for backwards compat
-return setmetatable({}, { __call = function() return WallV3 end })
+-- Example removed so rewrite.lua is purely a loadstring-able library.
+return setmetatable({}, { __call = function() return BartLib end })
