@@ -285,5 +285,6 @@ function BartLib:CreateWindow(title)
     return setmetatable(self, { __index = BartLib })
 end
 
--- Example removed so rewrite.lua is purely a loadstring-able library.
-return setmetatable({}, { __call = function() return BartLib end })
+-- return the library (also make it callable for backwards compatibility)
+setmetatable(BartLib, { __call = function() return BartLib end })
+return BartLib
