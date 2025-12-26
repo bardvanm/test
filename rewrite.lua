@@ -26,23 +26,26 @@ local function new(class, props)
     return inst
 end
 
+-- Smooth, reliable dragging using global input + RenderStepped and a deadzone
 local function makeDraggable(frame, handle)
     handle = handle or frame
     handle.Active = true
     local dragging, dragStart, startPos, startedMoving
     local renderConn
 
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+        local mouse = UserInputService:GetMouseLocation()
+        local hp, hs = handle.AbsolutePosition, handle.AbsoluteSize
+        if mouse.X >= hp.X and mouse.X <= hp.X + hs.X and mouse.Y >= hp.Y and mouse.Y <= hp.Y + hs.Y then
             dragging = true
             startedMoving = false
-            dragStart = input.Position
+            dragStart = mouse
             startPos = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
-
             renderConn = RunService.RenderStepped:Connect(function()
                 if not dragging then return end
-                local mouse = UserInputService:GetMouseLocation()
-                local delta = mouse - dragStart
+                local m = UserInputService:GetMouseLocation()
+                local delta = m - dragStart
                 if not startedMoving then
                     if math.abs(delta.X) + math.abs(delta.Y) < 6 then return end
                     startedMoving = true
@@ -56,7 +59,7 @@ local function makeDraggable(frame, handle)
         end
     end)
 
-    handle.InputEnded:Connect(function(input)
+    UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
             if renderConn then renderConn:Disconnect(); renderConn = nil end
@@ -78,6 +81,7 @@ function BartLib:CreateWindow(title)
     local HEADER_H = 34
     local TAB_H = 36
     local MAX_H = 360
+    local CONTENT_PADDING = 24
 
     local win = new("Frame", {
         Parent = SCREEN,
@@ -100,7 +104,7 @@ function BartLib:CreateWindow(title)
 
     local tabBar = new("Frame", { Parent = win, Name = "TabBar", Position = UDim2.new(0,0,0,HEADER_H), Size = UDim2.new(1,0,0,TAB_H), BackgroundColor3 = theme.Tab, BorderSizePixel = 0, ClipsDescendants = false })
     new("UICorner", { Parent = tabBar, CornerRadius = UDim.new(0,6) })
-    local tabLayout = new("UIListLayout", { Parent = tabBar, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0,8), SortOrder = Enum.SortOrder.LayoutOrder })
+    new("UIListLayout", { Parent = tabBar, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Center, Padding = UDim.new(0,8), SortOrder = Enum.SortOrder.LayoutOrder })
     new("UIPadding", { Parent = tabBar, PaddingLeft = UDim.new(0,8), PaddingRight = UDim.new(0,8) })
 
     local content = new("Frame", { Parent = win, Position = UDim2.new(0,0,0, HEADER_H + TAB_H), Size = UDim2.new(1,0,0,0), BackgroundColor3 = theme.Panel, BorderSizePixel = 0 })
@@ -131,14 +135,14 @@ function BartLib:CreateWindow(title)
                 local targetHeight = 0
                 if selected then
                     local h = (selected._uiList and selected._uiList.AbsoluteContentSize.Y) or selected.ElementsFrame.AbsoluteSize.Y
-                    targetHeight = math.clamp(HEADER_H + TAB_H + h + 16, HEADER_H + TAB_H + 80, MAX_H)
+                    targetHeight = math.clamp(HEADER_H + TAB_H + h + CONTENT_PADDING, HEADER_H + TAB_H + 80, MAX_H)
                 else
                     local maxContent = 0
                     for _,f in ipairs(self._folders) do
                         local h = (f._uiList and f._uiList.AbsoluteContentSize.Y) or f.ElementsFrame.AbsoluteSize.Y
                         maxContent = math.max(maxContent, h)
                     end
-                    targetHeight = math.clamp(HEADER_H + TAB_H + maxContent + 16, HEADER_H + TAB_H + 80, MAX_H)
+                    targetHeight = math.clamp(HEADER_H + TAB_H + maxContent + CONTENT_PADDING, HEADER_H + TAB_H + 80, MAX_H)
                 end
                 win:TweenSize(UDim2.new(0, WIDTH, 0, targetHeight), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
             end)
@@ -164,7 +168,7 @@ function BartLib:CreateWindow(title)
         end
 
         local contentH = measure()
-        local desired = HEADER_H + TAB_H + math.max(60, contentH) + 16
+        local desired = HEADER_H + TAB_H + math.max(60, contentH) + CONTENT_PADDING
         win:TweenSize(UDim2.new(0, WIDTH, 0, desired), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
     end
 
@@ -230,13 +234,13 @@ function BartLib:CreateWindow(title)
                 end
             end
             local function setFromX(x)
-                 local rel = math.clamp((x - track.AbsolutePosition.X)/track.AbsoluteSize.X, 0, 1)
-                 local raw = (min + (max-min)*rel)
-                 value = math.floor(raw/step + 0.5) * step
-                 fill.Size = UDim2.new(math.clamp((value - min)/(max - min), 0, 1),0,1,0)
-                 valLbl.Text = formatValue(value)
-                 if cb then pcall(cb, value) end
-             end
+                local rel = math.clamp((x - track.AbsolutePosition.X)/track.AbsoluteSize.X, 0, 1)
+                local raw = (min + (max-min)*rel)
+                value = math.floor(raw/step + 0.5) * step
+                fill.Size = UDim2.new(math.clamp((value - min)/(max - min), 0, 1),0,1,0)
+                valLbl.Text = formatValue(value)
+                if cb then pcall(cb, value) end
+            end
             -- initialize visuals to min/default
             do
                 local initRel = (value - min) / math.max(1, (max - min))
@@ -263,8 +267,8 @@ function BartLib:CreateWindow(title)
             main.MouseButton1Click:Connect(function()
                 list.Visible = not list.Visible
                 if list.Visible and self._minimized then setMinimized(false) end
-                -- re-measure & resize after layout updates
-                if list.Visible then task.defer(function() RunService.Heartbeat:Wait(); selectFolder(folder) end) end
+                -- always re-measure after toggle (open or close) so window expands/shrinks
+                task.defer(function() RunService.Heartbeat:Wait(); selectFolder(folder) end)
             end)
             for _,opt in ipairs(options or {}) do
                 local o = new("TextButton", { Parent = list, Size = UDim2.new(1,0,0,26), BackgroundColor3 = theme.Button, Text = opt, TextColor3 = theme.Text, AutoButtonColor = false })
@@ -275,7 +279,7 @@ function BartLib:CreateWindow(title)
                     main.Text = tostring(opt)
                     list.Visible = false
                     if cb then pcall(cb, opt) end
-                    -- ensure window resizes to show the change
+                    -- ensure window resizes to reflect the closed list
                     task.defer(function() RunService.Heartbeat:Wait(); selectFolder(folder) end)
                 end)
             end
@@ -323,7 +327,7 @@ function BartLib:CreateWindow(title)
         folder.Bind = function(_, ...) return AddBind(...) end
         folder.Box = function(_, ...) return AddBox(...) end
         folder.Open = function() selectFolder(folder) end
-        folder.Close = function() elems.Visible = false end
+        folder.Close = function() elems.Visible = false; task.defer(function() RunService.Heartbeat:Wait(); selectFolder(folder) end) end
 
         table.insert(self._folders, folder)
         if #self._folders == 1 then selectFolder(folder) end
@@ -336,6 +340,6 @@ function BartLib:CreateWindow(title)
     return setmetatable(self, { __index = BartLib })
 end
 
--- return the library (also make it callable for backwards compatibility)
+-- return the library (also callable for compatibility)
 setmetatable(BartLib, { __call = function() return BartLib end })
 return BartLib
