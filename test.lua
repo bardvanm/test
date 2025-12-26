@@ -1,0 +1,32 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bardvanm/bartlib/main/bartlib.lua"))()
+local Window = Library:CreateWindow("bartlib Test")
+
+local Farming = Window:CreateFolder("Farming")
+local Combat = Window:CreateFolder("Combat")
+local Misc = Window:CreateFolder("Misc")
+local Settings = Window:CreateFolder("Settings")
+
+Farming:Toggle("Farming Section", function() end)
+Farming:Button("Auto Farm", function() print("Auto Farm clicked") end)
+Farming:Slider("Farm Speed",{min=10,max=100,precise=true},function(val) print("Farm Speed:",val) end)
+Farming:Dropdown("Select Item",{"Sword","Pickaxe","Potion"},true,function(opt) print("Selected:",opt) end)
+Farming:Bind("Farm Bind",Enum.KeyCode.F,function() print("Bind pressed") end)
+Farming:Box("Custom Value","number",function(val) print("Box:",val) end)
+
+Combat:Toggle("Combat Section", function() end)
+Combat:Toggle("Kill Aura",function(state) print("Kill Aura:",state) end)
+Combat:Slider("Aura Range",{min=5,max=50,precise=false},function(val) print("Aura Range:",val) end)
+Combat:Button("Enable One Hit",function() print("One Hit Enabled") end)
+Combat:Dropdown("Attack Mode",{"Normal","Fast","Insane"},true,function(opt) print("Attack Mode:",opt) end)
+
+Misc:Toggle("Misc Section", function() end)
+Misc:Button("Infinite Jump",function() print("Infinite Jump") end)
+Misc:Button("Anti AFK",function() print("Anti AFK Activated") end)
+Misc:Toggle("Noclip",function(state) print("Noclip:",state) end)
+Misc:Slider("Jump Power",{min=50,max=500,precise=true},function(val) print("Jump Power:",val) end)
+Misc:Box("Custom Name","string",function(val) print("Box Input:",val) end)
+Misc:Bind("Misc Bind",Enum.KeyCode.M,function() print("Misc Bind pressed") end)
+
+Settings:Toggle("Settings Section", function() end)
+Settings:Bind("Toggle UI",Enum.KeyCode.RightShift,function() Window:ToggleUI() end)
+Settings:Button("Destroy UI",function() Window:DestroyGui() end)
