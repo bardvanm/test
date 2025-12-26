@@ -1,8 +1,3 @@
--- BartLib: Wally-style GUI library (loadstring(...)() returns this)
--- Usage:
--- local bartlib = loadstring(game:HttpGet('<raw rewrite.lua url>'))()
--- local Window = bartlib:CreateWindow("My Hub")
-
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
