@@ -33,33 +33,32 @@ local function makeDraggable(frame, handle)
     local dragging, dragStart, startPos, startedMoving
     local renderConn
 
-    UserInputService.InputBegan:Connect(function(input)
+    -- start drag when clicking the handle (works reliably for header + its children)
+    handle.InputBegan:Connect(function(input)
         if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-        local mouse = UserInputService:GetMouseLocation()
-        local hp, hs = handle.AbsolutePosition, handle.AbsoluteSize
-        if mouse.X >= hp.X and mouse.X <= hp.X + hs.X and mouse.Y >= hp.Y and mouse.Y <= hp.Y + hs.Y then
-            dragging = true
-            startedMoving = false
-            dragStart = mouse
-            startPos = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
-            renderConn = RunService.RenderStepped:Connect(function()
-                if not dragging then return end
-                local m = UserInputService:GetMouseLocation()
-                local delta = m - dragStart
-                if not startedMoving then
-                    if math.abs(delta.X) + math.abs(delta.Y) < 6 then return end
-                    startedMoving = true
-                end
-                local parentSize = frame.Parent.AbsoluteSize
-                local frameSize = frame.AbsoluteSize
-                local newX = math.clamp(startPos.X + delta.X, 0, parentSize.X - frameSize.X)
-                local newY = math.clamp(startPos.Y + delta.Y, 0, parentSize.Y - frameSize.Y)
-                frame.Position = UDim2.new(0, newX, 0, newY)
-            end)
-        end
+        dragging = true
+        startedMoving = false
+        -- use mouse location for consistent RenderStepped updates
+        dragStart = UserInputService:GetMouseLocation()
+        startPos = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+
+        renderConn = RunService.RenderStepped:Connect(function()
+            if not dragging then return end
+            local m = UserInputService:GetMouseLocation()
+            local delta = m - dragStart
+            if not startedMoving then
+                if math.abs(delta.X) + math.abs(delta.Y) < 6 then return end
+                startedMoving = true
+            end
+            local parentSize = frame.Parent.AbsoluteSize
+            local frameSize = frame.AbsoluteSize
+            local newX = math.clamp(startPos.X + delta.X, 0, parentSize.X - frameSize.X)
+            local newY = math.clamp(startPos.Y + delta.Y, 0, parentSize.Y - frameSize.Y)
+            frame.Position = UDim2.new(0, newX, 0, newY)
+        end)
     end)
 
-    UserInputService.InputEnded:Connect(function(input)
+    handle.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
             if renderConn then renderConn:Disconnect(); renderConn = nil end
