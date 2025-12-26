@@ -30,7 +30,7 @@ end
 local function makeDraggable(frame, handle)
     handle = handle or frame
     handle.Active = true
-    local dragging, dragStart, startPos, startedMoving
+    local dragging, dragStart, startPos, startedMoving, clickOffset
     local renderConn
 
     -- start drag when clicking the handle (works reliably for header + its children)
@@ -38,22 +38,24 @@ local function makeDraggable(frame, handle)
         if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
         dragging = true
         startedMoving = false
-        -- use mouse location for consistent RenderStepped updates
+        -- capture exact mouse and frame positions and the click offset
         dragStart = UserInputService:GetMouseLocation()
         startPos = Vector2.new(frame.AbsolutePosition.X, frame.AbsolutePosition.Y)
+        clickOffset = dragStart - startPos
 
         renderConn = RunService.RenderStepped:Connect(function()
             if not dragging then return end
             local m = UserInputService:GetMouseLocation()
-            local delta = m - dragStart
+            local newPos = m - clickOffset
+            local delta = newPos - startPos
             if not startedMoving then
                 if math.abs(delta.X) + math.abs(delta.Y) < 6 then return end
                 startedMoving = true
             end
             local parentSize = frame.Parent.AbsoluteSize
             local frameSize = frame.AbsoluteSize
-            local newX = math.clamp(startPos.X + delta.X, 0, parentSize.X - frameSize.X)
-            local newY = math.clamp(startPos.Y + delta.Y, 0, parentSize.Y - frameSize.Y)
+            local newX = math.clamp(newPos.X, 0, parentSize.X - frameSize.X)
+            local newY = math.clamp(newPos.Y, 0, parentSize.Y - frameSize.Y)
             frame.Position = UDim2.new(0, newX, 0, newY)
         end)
     end)
