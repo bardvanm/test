@@ -1,32 +1,36 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bardvanm/bartlib/main/bartlibv2.lua"))()
-local Window = Library:CreateWindow("bartlib Test")
+-- BartLib v2 Loadstring
+-- Upload bartlibv2.lua to GitHub raw and replace the URL below
+local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/bardvanm/bartlib/main/bartlibv2.lua"))()
 
-local Farming = Window:CreateFolder("Farming")
-local Combat = Window:CreateFolder("Combat")
-local Misc = Window:CreateFolder("Misc")
-local Settings = Window:CreateFolder("Settings")
+-- Create window
+local win = lib:CreateWindow("BartLib v2 Test")
 
-Farming:Toggle("Farming Section", function() end)
-Farming:Button("Auto Farm", function() print("Auto Farm clicked") end)
-Farming:Slider("Farm Speed",{min=10,max=100,precise=true},function(val) print("Farm Speed:",val) end)
-Farming:Dropdown("Select Item",{"Sword","Pickaxe","Potion"},true,function(opt) print("Selected:",opt) end)
-Farming:Bind("Farm Bind",Enum.KeyCode.F,function() print("Bind pressed") end)
-Farming:Box("Custom Value","number",function(val) print("Box:",val) end)
+-- Create folders/tabs
+local main = win:CreateFolder("Main")
+local features = win:CreateFolder("Features")
 
-Combat:Toggle("Combat Section", function() end)
-Combat:Toggle("Kill Aura",function(state) print("Kill Aura:",state) end)
-Combat:Slider("Aura Range",{min=5,max=50,precise=false},function(val) print("Aura Range:",val) end)
-Combat:Button("Enable One Hit",function() print("One Hit Enabled") end)
-Combat:Dropdown("Attack Mode",{"Normal","Fast","Insane"},true,function(opt) print("Attack Mode:",opt) end)
+-- Main tab
+main:Toggle("Test Toggle", function(value)
+    print("Toggle:", value)
+end)
 
-Misc:Toggle("Misc Section", function() end)
-Misc:Button("Infinite Jump",function() print("Infinite Jump") end)
-Misc:Button("Anti AFK",function() print("Anti AFK Activated") end)
-Misc:Toggle("Noclip",function(state) print("Noclip:",state) end)
-Misc:Slider("Jump Power",{min=50,max=500,precise=true},function(val) print("Jump Power:",val) end)
-Misc:Box("Custom Name","string",function(val) print("Box Input:",val) end)
-Misc:Bind("Misc Bind",Enum.KeyCode.M,function() print("Misc Bind pressed") end)
+main:Button("Test Button", function()
+    print("Button clicked!")
+end)
 
-Settings:Toggle("Settings Section", function() end)
-Settings:Bind("Toggle UI",Enum.KeyCode.RightShift,function() Window:ToggleUI() end)
-Settings:Button("Destroy UI",function() Window:DestroyGui() end)
+main:Slider("Speed", {min = 1, max = 10, step = 0.5, default = 5}, function(value)
+    print("Speed:", value)
+end)
+
+-- Features tab
+features:Dropdown("Select Mode", {"Mode 1", "Mode 2", "Mode 3"}, function(value)
+    print("Selected:", value)
+end)
+
+features:Slider("Range", {min = 10, max = 100, step = 5, default = 50}, function(value)
+    print("Range:", value)
+end)
+
+features:Button("Execute", function()
+    print("Executed!")
+end)
