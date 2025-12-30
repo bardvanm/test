@@ -1,4 +1,4 @@
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bardvanm/test/main/test.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bardvanm/bartlib/main/bartlibv2.lua"))()
 local Window = Library:CreateWindow("bartlib Test")
 
 local Farming = Window:CreateFolder("Farming")
