@@ -28,8 +28,14 @@ function getRoot(char)
 end
 
 function touchInterest(part)
-    firetouchinterest(game:GetService("Workspace").bartvanm.Ball, part, 0)
-    firetouchinterest(game:GetService("Workspace").bartvanm.Ball, part, 1)
+    local char = lp.Character
+    if char and firetouchinterest then
+        local ball = char:FindFirstChild("Ball")
+        if ball then
+            firetouchinterest(ball, part, 0)
+            firetouchinterest(ball, part, 1)
+        end
+    end
 end
 
 function getAccuracy()
@@ -88,8 +94,13 @@ function autoDunk()
             if not getgenv().autoDunk then lp.Character.HumanoidRootPart.Anchored = false break end
             lp.Character.HumanoidRootPart.Anchored = false    
             lp.Character.HumanoidRootPart.CFrame = ws.BlueGoal1.Score.CFrame + Vector3.new(autoDunkDistance,0,0)
-            lp.Character.Ball.ServerEvent:FireServer('Accuracy', 1)
-            lp.Character.Ball.ServerEvent:FireServer('Start')
+            
+            local ball = lp.Character:FindFirstChild("Ball")
+            if ball and ball:FindFirstChildOfClass("RemoteEvent") then
+                ball:FindFirstChildOfClass("RemoteEvent"):FireServer('Accuracy', 1)
+                ball:FindFirstChildOfClass("RemoteEvent"):FireServer('Start')
+            end
+            
             for i=1,100 do
                 touchInterest(ws.BlueGoal1.Score)
             end
